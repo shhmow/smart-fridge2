@@ -45,20 +45,31 @@ export async function getSuggestedRecipes(): Promise<Recipe[]> {
     apiKey: process.env.OPENAI_API_KEY,
   })
 
-  const ingredients = mockProducts.map((product) => product.name).join(", ")
+  const inventoryItems = mockProducts.map((product) => 
+    `${product.quantity} ${product.unit} of ${product.name.toLowerCase()}`
+  ).join(", ")
 
-  const prompt = `Given the following ingredients: ${ingredients}
-  Suggest 3 recipes that can be made. For each recipe, provide:
-  1. A name
-  2. A list of ingredients (only use the provided ingredients)
-  3. Brief instructions
+  const prompt = `As a culinary expert, suggest 3 practical recipes using ONLY the following ingredients from my fridge inventory: ${inventoryItems}
 
-  Format the output as a JSON array of objects, each with 'name', 'ingredients', and 'instructions' properties.`
+  Requirements:
+  1. ONLY use ingredients from the provided inventory
+  2. Consider the available quantities
+  3. Recipes should be practical and doable with basic kitchen equipment
+  4. If there aren't enough ingredients for a complete meal, suggest a partial recipe or simple dish
+
+  Format each recipe as a JSON object with:
+  - name: A descriptive name
+  - ingredients: List of ingredients with quantities (only from inventory)
+  - instructions: Step-by-step cooking instructions
+  
+  Return an array of 3 recipe objects.`
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-3.5-turbo-1106", 
       messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" }, 
+      temperature: 0.7,
     })
 
     const recipesString = response.choices[0].message.content
@@ -66,7 +77,8 @@ export async function getSuggestedRecipes(): Promise<Recipe[]> {
       throw new Error("Failed to generate recipes")
     }
 
-    const recipes: Recipe[] = JSON.parse(recipesString)
+    const parsedResponse = JSON.parse(recipesString)
+    const recipes: Recipe[] = parsedResponse.recipes || []
     return recipes.map((recipe, index) => ({
       ...recipe,
       id: `generated-${index + 1}`,
@@ -87,4 +99,3 @@ export async function refreshRecipes(): Promise<{ success: boolean; message: str
     return { success: false, message: "Failed to refresh recipes" }
   }
 }
-
