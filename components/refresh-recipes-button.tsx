@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button"
 import { refreshRecipes } from "@/app/actions"
 import { useState } from "react"
 import { useToast } from "@/components/ui/use-toast"
+import { useRouter } from "next/navigation"
 
 export function RefreshRecipesButton() {
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
+  const router = useRouter()
 
   const handleRefresh = async () => {
     setIsLoading(true)
@@ -17,10 +19,10 @@ export function RefreshRecipesButton() {
       if (result.success) {
         toast({
           title: "Success",
-          description: "Recipes have been refreshed!",
+          description: "New recipes have been generated!",
         })
-        // Refresh the page to show new recipes
-        window.location.reload()
+        // Force a hard refresh of the page
+        router.refresh()
       } else {
         throw new Error(result.message)
       }
@@ -31,7 +33,10 @@ export function RefreshRecipesButton() {
         variant: "destructive",
       })
     } finally {
-      setIsLoading(false)
+      // Add a slight delay before enabling the button again to prevent spam
+      setTimeout(() => {
+        setIsLoading(false)
+      }, 1000)
     }
   }
 
@@ -43,7 +48,7 @@ export function RefreshRecipesButton() {
       className="bg-white hover:bg-gray-100"
     >
       <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-      {isLoading ? "Refreshing..." : "Refresh Recipes"}
+      {isLoading ? "Generating..." : "New Recipes"}
     </Button>
   )
 }

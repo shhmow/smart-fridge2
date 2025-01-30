@@ -7,9 +7,17 @@ export interface Product {
   expirationDate: string
 }
 
+export interface RecipeIngredient {
+  name: string
+  quantity: number
+  unit: string
+  available: boolean
+}
+
 export interface Recipe {
   id: string
   name: string
-  ingredients: string[]
+  ingredients: RecipeIngredient[]
+  instructions: string[]
+  missingIngredients?: string[]
 }
-

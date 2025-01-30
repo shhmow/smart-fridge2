@@ -9,45 +9,46 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/components/ui/use-toast"
 import { addProduct } from "@/app/actions"
+import { addStoredProduct } from "@/lib/data"
 
 export default function AddProductForm() {
   const router = useRouter()
   const { toast } = useToast()
-  const [formData, setFormData] = useState({
-    name: "",
-    quantity: "",
-    unit: "",
-    expirationDate: "",
-  })
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
-
-  const handleUnitChange = (value: string) => {
-    setFormData({ ...formData, unit: value })
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const form = e.target as HTMLFormElement
-    const formData = new FormData(form)
+    setIsLoading(true)
 
-    const result = await addProduct(formData)
+    try {
+      const formData = new FormData(e.currentTarget)
+      const result = await addProduct(formData)
 
-    if (result.success) {
-      toast({
-        title: "Product added",
-        description: result.message,
-      })
-      router.push("/")
-      router.refresh()
-    } else {
+      if (result.success && result.product) {
+        // Add to local storage
+        addStoredProduct(result.product)
+        
+        toast({
+          title: "Success",
+          description: "Product added successfully!",
+        })
+        router.push("/")
+        router.refresh()
+      } else {
+        toast({
+          title: "Error",
+          description: result.message || "Failed to add product",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
       toast({
         title: "Error",
-        description: result.message,
+        description: "An unexpected error occurred",
         variant: "destructive",
       })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -60,22 +61,29 @@ export default function AddProductForm() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Product Name</Label>
-            <Input id="name" name="name" value={formData.name} onChange={handleChange} required />
+            <Input
+              id="name"
+              name="name"
+              placeholder="Enter product name"
+              required
+            />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="quantity">Quantity</Label>
             <Input
               id="quantity"
               name="quantity"
               type="number"
-              value={formData.quantity}
-              onChange={handleChange}
+              min="1"
+              placeholder="Enter quantity"
               required
             />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="unit">Unit</Label>
-            <Select onValueChange={handleUnitChange} name="unit" required>
+            <Select name="unit" required>
               <SelectTrigger>
                 <SelectValue placeholder="Select unit" />
               </SelectTrigger>
@@ -85,28 +93,29 @@ export default function AddProductForm() {
                 <SelectItem value="kilograms">Kilograms</SelectItem>
                 <SelectItem value="liters">Liters</SelectItem>
                 <SelectItem value="milliliters">Milliliters</SelectItem>
+                <SelectItem value="cups">Cups</SelectItem>
+                <SelectItem value="tablespoons">Tablespoons</SelectItem>
+                <SelectItem value="teaspoons">Teaspoons</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="expirationDate">Expiration Date</Label>
             <Input
               id="expirationDate"
               name="expirationDate"
               type="date"
-              value={formData.expirationDate}
-              onChange={handleChange}
               required
             />
           </div>
         </CardContent>
         <CardFooter>
-          <Button type="submit" className="w-full">
-            Add Product
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? "Adding..." : "Add Product"}
           </Button>
         </CardFooter>
       </form>
     </Card>
   )
 }
-
