@@ -1,0 +1,1 @@
+This is the website repo for FridgeSense, an fridge inventroy system. The website will keep track of all the items insdie of the fridge, quantity of each, and their exiration date. There is a feature to add items manually but the primarly way items will added is from a barode scanner from a mricocontroller. 
