@@ -1,10 +1,20 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { mockProducts, mockRecipes, processRecipeIngredients, getStoredProducts } from "@/lib/data"
-import type { Product, Recipe, RecipeIngredient } from "@/lib/types"
+import { mockProducts, mockRecipes, processRecipeIngredients } from "@/lib/data"
+import type { Product, Recipe } from "@/lib/types"
 import OpenAI from "openai"
-import { headers } from 'next/headers'
+
+// const openai = new OpenAI({
+//   baseURL: 'https://openrouter.ai/api/v1',
+//   apiKey: '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'
+// });
+// model="google/gemini-2.0-flash-lite-preview-02-05:free",
+
+const openai = new OpenAI({
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: "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",
+})
 
 // Keep track of the last request time
 let lastRequestTime = 0
@@ -69,7 +79,7 @@ export async function getSuggestedRecipes(forceRefresh = false): Promise<Recipe[
       messages: [
         { 
           role: "system", 
-          content: "You are a helpful cooking assistant that suggests recipes based on available ingredients."
+          content: "You are a helpful cooking assistant that suggests recipes based on available ingredients. Return recipes in JSON format where each recipe has: id (string), name (string), ingredients (array of objects with name, quantity, and unit), and instructions (array of strings for each step)."
         },
         {
           role: "user",
@@ -90,13 +100,13 @@ export async function getSuggestedRecipes(forceRefresh = false): Promise<Recipe[
     return [
       {
         id: "mock1",
-        name: "Simple Fruit Salad",
+        name: "Simple Fruit Saladz",
         ingredients: [
           { name: "Apple", quantity: 1, unit: "piece" },
           { name: "Orange", quantity: 1, unit: "piece" },
           { name: "Banana", quantity: 1, unit: "piece" }
         ],
-        instructions: "1. Wash and cut all fruits\n2. Mix in a bowl\n3. Serve fresh"
+        instructions: ["Wash and cut all fruits", "Mix in a bowl", "Serve fresh"]
       },
       {
         id: "mock2",
@@ -106,7 +116,7 @@ export async function getSuggestedRecipes(forceRefresh = false): Promise<Recipe[
           { name: "Cheese", quantity: 1, unit: "slice" },
           { name: "Lettuce", quantity: 1, unit: "leaf" }
         ],
-        instructions: "1. Layer cheese and lettuce between bread slices\n2. Cut diagonally and serve"
+        instructions: ["Layer cheese and lettuce between bread slices", "Cut diagonally and serve"]
       },
       {
         id: "mock3",
@@ -116,7 +126,7 @@ export async function getSuggestedRecipes(forceRefresh = false): Promise<Recipe[
           { name: "Cucumber", quantity: 1, unit: "piece" },
           { name: "Tomato", quantity: 1, unit: "piece" }
         ],
-        instructions: "1. Wash and chop all vegetables\n2. Mix in a bowl\n3. Season to taste"
+        instructions: ["Wash and chop all vegetables", "Mix in a bowl", "Season to taste"]
       }
     ];
   }
